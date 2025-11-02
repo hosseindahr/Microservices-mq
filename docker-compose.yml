@@ -6,6 +6,8 @@ services:
     build:
       context: .
       dockerfile: Services/Order/Presentation/Order.Api/Dockerfile
+    ports:
+      - "8080:8080"
   rabbitmq:
     image: rabbitmq:3.10-management
     ports:
