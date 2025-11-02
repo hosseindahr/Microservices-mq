@@ -1,0 +1,16 @@
+version: '3.4'
+
+services:
+  order.api:
+    image: ${DOCKER_REGISTRY-}orderapi
+    build:
+      context: .
+      dockerfile: Services/Order/Presentation/Order.Api/Dockerfile
+  rabbitmq:
+    image: rabbitmq:3.10-management
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
