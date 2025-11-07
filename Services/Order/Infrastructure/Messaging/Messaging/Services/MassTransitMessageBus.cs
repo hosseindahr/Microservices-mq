@@ -1,5 +1,4 @@
 ﻿using MassTransit;
-
 namespace Messaging.Services
 {
     public class MassTransitMessageBus : IMessageBus

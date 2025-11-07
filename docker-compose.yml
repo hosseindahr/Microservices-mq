@@ -1,18 +1,35 @@
-version: '3.4'
+﻿version: '3.8'
 
 services:
-  order.api:
-    image: ${DOCKER_REGISTRY-}orderapi
-    build:
-      context: .
-      dockerfile: Services/Order/Presentation/Order.Api/Dockerfile
-    ports:
-      - "8080:8080"
-  rabbitmq:
+  order-rabbitmq:
     image: rabbitmq:3.10-management
+    container_name: rabbitmq
+    hostname: order-queue
     ports:
-      - "5672:5672"     # AMQP
-      - "15672:15672"   # Management UI
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+
+  order.api:
+    build:
+      context: .
+      dockerfile: Services/Order/Presentation/Order.Api/Dockerfile
+    container_name: order.api
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__Main=Server=host.docker.internal;Database=OrderDb;User Id=sa;Password=abc123;TrustServerCertificate=True;
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=guest
+      - RabbitMq__Password=guest
+    depends_on:
+      - rabbitmq
+    # entrypoint برای صبر کردن تا RabbitMQ آماده بشه
+    entrypoint: ["./wait-for-it.sh", "rabbitmq:5672", "--", "dotnet", "Order.Api.dll"]
+
+networks:
+  default:
+    driver: bridge

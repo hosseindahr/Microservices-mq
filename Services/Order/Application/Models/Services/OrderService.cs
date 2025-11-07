@@ -1,11 +1,8 @@
-﻿using Messaging.Services;
+﻿using Messaging.DTO;
+using Messaging.Services;
 using Microsoft.EntityFrameworkCore;
 using Models.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Data;
 
 namespace Models.Services
 {
@@ -24,11 +21,25 @@ namespace Models.Services
 
             await _context.Orders.AddAsync(order);
             await _context.SaveChangesAsync();
-            await _bus.PublishAsync(order);
+
+            await _bus.PublishAsync(new OrderCreated
+            {
+                CreateDate=order.CreateDate,
+                Description=order.Description,
+                Id= order.Id,
+                ProductId=order.ProductId,
+            });
         }
 
-        public async Task Update(Order order)
+        public async Task Update(OrderCreated orderCreated)
         {
+            Order order = new Order
+            {
+                Id = orderCreated.Id,
+                CreateDate = orderCreated.CreateDate,
+                Description = orderCreated.Description,
+                ProductId = orderCreated.ProductId
+            };
             _context.Entry(order).State = EntityState.Modified;
             await _context.SaveChangesAsync();
         }

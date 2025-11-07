@@ -4,6 +4,9 @@ using Models.Services;
 using Messaging.Services;
 using MassTransit;
 using RabbitMQService.Consumer;
+using RabbitMQService;
+using MassTransit.Configuration;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,23 +19,34 @@ builder.Services.AddDbContextPool<OrderDbContext>((serviceProvider, optionsBuild
 {
     optionsBuilder.UseSqlServer(builder.Configuration.GetConnectionString("Main"));
 });
+builder.Services.Configure<MessageBrokerSettings>(
+    builder.Configuration.GetSection("MessageBroker")
+    );
+builder.Services.AddSingleton(sp=>
+sp.GetRequiredService<IOptions<MessageBrokerSettings>>().Value
+);
 builder.Services.AddMassTransit(x =>
 {
-    x.AddConsumer<OrderCreatedCosumer>();
+    x.AddConsumer<OrderCreatedConsumer>();
     x.UsingRabbitMq((context, cfg) =>
     {
-        cfg.Host("rabbitmq://localhost", h =>
+        MessageBrokerSettings settings = context.GetRequiredService<MessageBrokerSettings>();
+        cfg.Host(new Uri(settings.Host), h =>
         {
-            h.Username("guest");
-            h.Password("guest");
+            h.Username(settings.Username);
+            h.Password(settings.Password);
         });
         cfg.ReceiveEndpoint("order-created-queue", e =>
         {
-            e.ConfigureConsumer<OrderCreatedCosumer>(context);
+            e.Durable = true;
+            e.AutoDelete = false;
+            e.Exclusive = false;
+            e.ConfigureConsumer<OrderCreatedConsumer>(context);
+            e.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
         });
     });
 });
-
+builder.Services.AddMassTransitHostedService();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IMessageBus, MassTransitMessageBus>();
 builder.Services.AddSwaggerGen();
