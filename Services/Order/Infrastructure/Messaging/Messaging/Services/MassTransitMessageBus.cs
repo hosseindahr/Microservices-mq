@@ -3,8 +3,8 @@ namespace Messaging.Services
 {
     public class MassTransitMessageBus : IMessageBus
     {
-        private readonly IBus _bus;
-        public MassTransitMessageBus(IBus bus)
+        private readonly IPublishEndpoint _bus;
+        public MassTransitMessageBus(IPublishEndpoint bus)
         {
             _bus = bus;
         }

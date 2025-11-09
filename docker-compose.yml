@@ -4,7 +4,6 @@ services:
   order-rabbitmq:
     image: rabbitmq:3.10-management
     container_name: rabbitmq
-    hostname: order-queue
     ports:
       - "5672:5672"    # AMQP
       - "15672:15672"  # Management UI
@@ -22,14 +21,10 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__Main=Server=host.docker.internal;Database=OrderDb;User Id=sa;Password=abc123;TrustServerCertificate=True;
-      - RabbitMq__Host=rabbitmq
-      - RabbitMq__Username=guest
-      - RabbitMq__Password=guest
+      - ConnectionStrings__RabbitMQ=amqp://guest:guest@order-rabbitmq:5672;
     depends_on:
-      - rabbitmq
-    # entrypoint برای صبر کردن تا RabbitMQ آماده بشه
-    entrypoint: ["./wait-for-it.sh", "rabbitmq:5672", "--", "dotnet", "Order.Api.dll"]
+     - order-rabbitmq
+      
+    
 
-networks:
-  default:
-    driver: bridge
+
